@@ -22,7 +22,7 @@ from telethon.tl.functions.messages import GetCommonChatsRequest
 
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, parse_qs, urlencode, unquote
+from urllib.parse import urlparse, parse_qs, urlencode, unquote, quote
 from telethon.tl.functions.account import UpdateProfileRequest
 from telethon.tl.types import InputPhoto
 from telethon.tl.functions.photos import DeletePhotosRequest, UploadProfilePhotoRequest
@@ -155,7 +155,7 @@ async def pomf2_handler(event, client):
             os.remove(path)
             await event.respond(f"✅ File berhasil diupload!\n🔗 {pomf_url}")
         except Exception as e:
-            await event.respond(f"❌ Error upload ke Pomf2: {e}")
+            await event.respond(f"❌ Error upload ke Pomf2")
         return
 
     # Case 2: Kirim media dengan caption /pomf
@@ -167,7 +167,7 @@ async def pomf2_handler(event, client):
             os.remove(path)
             await event.respond(f"✅ File berhasil diupload!\n🔗 {pomf_url}")
         except Exception as e:
-            await event.respond(f"❌ Error upload ke Pomf2: {e}")
+            await event.respond(f"❌ Error upload ke Pomf2")
         return
 
     await event.respond("❌ Gunakan `/pomf` dengan reply ke file/media, atau kirim media dengan caption `/pomf`.")
@@ -188,7 +188,7 @@ async def upload_to_uguu(path):
             json_resp = await resp.json()
             if isinstance(json_resp, dict) and "files" in json_resp:
                 return json_resp["files"][0]["url"]
-            raise ValueError(f"Unexpected response: {json_resp}")
+            raise ValueError(f"Unexpected response")
 
 
 
@@ -214,7 +214,7 @@ async def uguu_handler(event, client):
             os.remove(path)
             await event.respond(f"✅ File berhasil diupload!\n🔗 {uguu_url}")
         except Exception as e:
-            await event.respond(f"❌ Error upload ke Uguu: {e}")
+            await event.respond(f"❌ Error upload ke Uguu")
         return
 
     # Case 2: Kirim media dengan caption /uguu
@@ -226,7 +226,7 @@ async def uguu_handler(event, client):
             os.remove(path)
             await event.respond(f"✅ File berhasil diupload!\n🔗 {uguu_url}")
         except Exception as e:
-            await event.respond(f"❌ Error upload ke Uguu: {e}")
+            await event.respond(f"❌ Error upload ke Uguu")
         return
 
     await event.respond("❌ Gunakan `/uguu` dengan reply ke file/media, atau kirim media dengan caption `/uguu`.")
@@ -269,7 +269,7 @@ async def catbox_handler(event, client):
             os.remove(path)
             await event.respond(f"✅ File berhasil diupload!\n🔗 {catbox_url}")
         except Exception as e:
-            await event.respond(f"❌ Error upload ke Catbox: {e}")
+            await event.respond(f"❌ Error upload ke Catbox")
         return
 
     # Case 2: Kirim media dengan caption /catbox
@@ -281,7 +281,7 @@ async def catbox_handler(event, client):
             os.remove(path)
             await event.respond(f"✅ File berhasil diupload!\n🔗 {catbox_url}")
         except Exception as e:
-            await event.respond(f"❌ Error upload ke Catbox: {e}")
+            await event.respond(f"❌ Error upload ke Catbox")
         return
 
     await event.respond("❌ Gunakan `/catbox` dengan reply ke file/media, atau kirim media dengan caption `/catbox`.")
@@ -293,7 +293,7 @@ async def catbox_handler(event, client):
 
 
 
-async def edit_handler(event, client):
+async def edit1_handler(event, client):
     if not event.is_private:
         return
 
@@ -318,7 +318,7 @@ async def edit_handler(event, client):
             elif len(args) > 1:
                 prompt = args[1]
             else:
-                await event.respond("❌ Reply foto harus ada caption atau tambahkan teks setelah /edit.")
+                await event.respond("❌ Reply foto harus ada caption atau tambahkan teks setelah /edit1.")
                 return
 
         elif reply_msg.text and ("http://" in reply_msg.text or "https://" in reply_msg.text):
@@ -326,14 +326,14 @@ async def edit_handler(event, client):
             if len(args) > 1:
                 prompt = args[1]
             else:
-                await event.respond("❌ Harus ada teks setelah /edit untuk prompt.")
+                await event.respond("❌ Harus ada teks setelah /edit1 untuk prompt.")
                 return
         else:
             await event.respond("❌ Reply hanya bisa ke foto atau teks berisi link gambar.")
             return
 
     # Case 2: Kirim foto dengan caption /edit <text>
-    elif event.photo and event.raw_text.startswith("/edit"):
+    elif event.photo and event.raw_text.startswith("/edit1"):
         path = await client.download_media(event.message)
         image_url = await upload_to_uguu(path)
         os.remove(path)
@@ -341,11 +341,11 @@ async def edit_handler(event, client):
         if len(args) > 1:
             prompt = args[1]
         else:
-            await event.respond("❌ Harus ada teks setelah /edit untuk prompt.")
+            await event.respond("❌ Harus ada teks setelah /edit1 untuk prompt.")
             return
 
     else:
-        await event.respond("❌ Gunakan `/edit <text>` dengan reply foto/link, atau kirim foto dengan caption `/edit <text>`.")
+        await event.respond("❌ Gunakan `/edit1 <text>` dengan reply foto/link, atau kirim foto dengan caption `/edit1 <text>`.")
         return
 
     if not image_url or not prompt:
@@ -355,28 +355,61 @@ async def edit_handler(event, client):
     await event.respond("🖌️ Sedang mengedit foto...")
 
     try:
-        api_url = f"https://api-faa.my.id/faa/editfoto?url={image_url}&prompt={prompt}"
+        # Encode URL agar spasi dan simbol aman
+        encoded_url = quote(image_url, safe='')
+        encoded_prompt = quote(prompt, safe='')
+        
+        api_url = f"https://api-faa.my.id/faa/editfoto?url={encoded_url}&prompt={encoded_prompt}"
+        
         async with aiohttp.ClientSession() as session:
             async with session.get(api_url) as resp:
                 if resp.status != 200:
-                    await event.respond("❌ Edit foto API gagal.")
+                    text_error = await resp.text()
+                    await event.respond(f"❌ Edit foto API gagal")
                     return
-                path = "edit_result.png"
-                with open(path, "wb") as f:
-                    f.write(await resp.read())
+                
+                # Cek apakah responnya JSON atau Gambar Langsung
+                content_type = resp.headers.get('Content-Type', '')
+                
+                # Gunakan nama file unik berdasarkan waktu agar tidak bentrok
+                output_path = f"edit1_result_{int(datetime.now().timestamp())}.png"
 
-        uguu_url = await upload_to_uguu(path)
+                if 'application/json' in content_type:
+                    # Jika API return JSON (biasanya berisi url result)
+                    data = await resp.json()
+                    # Sesuaikan key ini dengan struktur JSON dari api-faa (biasanya 'url' atau 'result')
+                    result_link = data.get("url") or data.get("result") or data.get("link")
+                    
+                    if result_link:
+                        # Download gambar dari link yang diberikan API
+                        async with session.get(result_link) as img_resp:
+                            if img_resp.status == 200:
+                                with open(output_path, "wb") as f:
+                                    f.write(await img_resp.read())
+                            else:
+                                raise Exception("Gagal download hasil dari API")
+                    else:
+                        await event.respond(f"❌ API merespon JSON tapi tidak ada link gambar")
+                        return
+                else:
+                    # Jika API return gambar langsung (binary)
+                    with open(output_path, "wb") as f:
+                        f.write(await resp.read())
+
+        uguu_url = await upload_to_uguu(output_path)
 
         await client.send_file(
             event.chat_id,
-            path,
+            output_path,
             caption=f"🖌️ Edit foto selesai!\nPrompt: {prompt}\n🔗 {uguu_url}"
         )
-        os.remove(path)
+        os.remove(output_path)
 
     except Exception as e:
-        await event.respond(f"❌ Error edit foto: {e}")
-
+        await event.respond(f"❌ Error edit foto")
+        
+        
+        
 async def edit2_handler(event, client):
     if not event.is_private:
         return
@@ -402,7 +435,7 @@ async def edit2_handler(event, client):
             elif len(args) > 1:
                 prompt = args[1]
             else:
-                await event.respond("❌ Reply foto harus ada caption atau tambahkan teks setelah /edit.")
+                await event.respond("❌ Reply foto harus ada caption atau tambahkan teks setelah /edit2.")
                 return
 
         elif reply_msg.text and ("http://" in reply_msg.text or "https://" in reply_msg.text):
@@ -410,13 +443,13 @@ async def edit2_handler(event, client):
             if len(args) > 1:
                 prompt = args[1]
             else:
-                await event.respond("❌ Harus ada teks setelah /edit untuk prompt.")
+                await event.respond("❌ Harus ada teks setelah /edit2 untuk prompt.")
                 return
         else:
             await event.respond("❌ Reply hanya bisa ke foto atau teks berisi link gambar.")
             return
 
-    # Case 2: Kirim foto dengan caption /edit <text>
+    # Case 2: Kirim foto dengan caption /edit2 <text>
     elif event.photo and event.raw_text.startswith("/edit2"):
         path = await client.download_media(event.message)
         image_url = await upload_to_uguu(path)
@@ -436,32 +469,54 @@ async def edit2_handler(event, client):
         await event.respond("❌ Tidak ada gambar atau prompt yang valid.")
         return
 
-    await event.respond("🖌️ Sedang mengedit foto...")
+    await event.respond("🖌️ Sedang mengedit foto (Nano Banana)...")
 
     try:
-        api_url = f"https://api-faa.my.id/faa/nano-banana?url={image_url}&prompt={prompt}"
+        # Encode URL
+        encoded_url = quote(image_url, safe='')
+        encoded_prompt = quote(prompt, safe='')
+        
+        api_url = f"https://api-faa.my.id/faa/nano-banana?url={encoded_url}&prompt={encoded_prompt}"
         async with aiohttp.ClientSession() as session:
             async with session.get(api_url) as resp:
                 if resp.status != 200:
                     await event.respond("❌ Edit foto API gagal.")
                     return
-                path = "edit_result.png"
-                with open(path, "wb") as f:
-                    f.write(await resp.read())
+                
+                content_type = resp.headers.get('Content-Type', '')
+                output_path = f"edit2_result_{int(datetime.now().timestamp())}.png"
 
-        uguu_url = await upload_to_uguu(path)
+                if 'application/json' in content_type:
+                    # Handle JSON response
+                    data = await resp.json()
+                    result_link = data.get("url") or data.get("result") or data.get("link")
+                    
+                    if result_link:
+                        async with session.get(result_link) as img_resp:
+                            if img_resp.status == 200:
+                                with open(output_path, "wb") as f:
+                                    f.write(await img_resp.read())
+                            else:
+                                raise Exception("Gagal download hasil dari API")
+                    else:
+                        await event.respond(f"❌ API merespon JSON tapi tidak ada link gambar")
+                        return
+                else:
+                    # Handle Binary response
+                    with open(output_path, "wb") as f:
+                        f.write(await resp.read())
+
+        uguu_url = await upload_to_uguu(output_path)
 
         await client.send_file(
             event.chat_id,
-            path,
-            caption=f"🖌️ Edit foto selesai!\nPrompt: {prompt}\n🔗 {uguu_url}"
+            output_path,
+            caption=f"🖌️ Edit foto (Nano Banana) selesai!\nPrompt: {prompt}\n🔗 {uguu_url}"
         )
-        os.remove(path)
+        os.remove(output_path)
 
     except Exception as e:
-        await event.respond(f"❌ Error edit foto: {e}")
-
-
+        await event.respond(f"❌ Error edit foto")
 
 
 
@@ -547,7 +602,7 @@ async def hd_handler(event, client):
         os.remove(path)
 
     except Exception as e:
-        await event.respond(f"❌ Error HD: {e}")
+        await event.respond(f"❌ Error HD")
 
 
 
@@ -624,7 +679,7 @@ async def blurface_handler(event, client):
         os.remove(path)
 
     except Exception as e:
-        await event.respond(f"❌ Error blur face: {e}")
+        await event.respond(f"❌ Error blur face")
 
 
 
@@ -677,7 +732,7 @@ async def brat_handler(event, client):
         os.remove(path)
 
     except Exception as e:
-        await event.respond(f"❌ Error brat: {e}")
+        await event.respond(f"❌ Error brat")
 
 
 
@@ -733,7 +788,7 @@ async def ai_handler(event, client):
         await loading_msg.edit(f"{output}", parse_mode="markdown")
 
     except Exception as e:
-        await loading_msg.edit(f"⚠ Error AI: `{e}`")
+        await loading_msg.edit(f"⚠ Error AI")
 
 
 
@@ -786,7 +841,7 @@ async def ai2_handler(event, client):
         await loading_msg.edit(f"{output}", parse_mode="markdown")
 
     except Exception as e:
-        await loading_msg.edit(f"⚠ Error AI: `{e}`")
+        await loading_msg.edit(f"⚠ Error AI")
 
 
 async def ai3_handler(event, client):
@@ -840,7 +895,7 @@ async def ai3_handler(event, client):
         await loading_msg.edit(f"{answer}", parse_mode="markdown")
 
     except Exception as e:
-        await loading_msg.edit(f"⚠ Error AI: `{e}`")
+        await loading_msg.edit(f"⚠ Error AI")
 
 
 async def ai4_handler(event, client):
@@ -894,7 +949,7 @@ async def ai4_handler(event, client):
         await loading_msg.edit(f"{answer}", parse_mode="markdown")
 
     except Exception as e:
-        await loading_msg.edit(f"⚠ Error AI: `{e}`")
+        await loading_msg.edit(f"⚠ Error AI")
 
 
 async def ai5_handler(event, client):
@@ -947,7 +1002,7 @@ async def ai5_handler(event, client):
         await loading_msg.edit(f"{output}", parse_mode="markdown")
 
     except Exception as e:
-        await loading_msg.edit(f"⚠ Error AI: `{e}`")
+        await loading_msg.edit(f"⚠ Error AI")
 
 
 
@@ -995,7 +1050,7 @@ async def simsimi_handler(event, client):
         await loading_msg.edit(f"{output}", parse_mode="markdown")
 
     except Exception as e:
-        await loading_msg.edit(f"⚠ Error AI: `{e}`")
+        await loading_msg.edit(f"⚠ Error AI")
 
 
 
@@ -1058,7 +1113,7 @@ async def vn_to_text_handler(event, client, log_channel=None, log_admin=None):
                 os.remove(f)
 
     except Exception as e:
-        await loading_msg.edit(f"⚠ Error VN→Text: `{e}`", parse_mode="markdown")
+        await loading_msg.edit(f"⚠ Error VN→Text", parse_mode="markdown")
         
 
 
@@ -1148,7 +1203,7 @@ async def anti_view_once_and_ttl(event, client, log_channel, log_admin):
 
     except Exception as e:
         if log_admin:
-            await client.send_message(log_admin, f"⚠ Error anti-viewonce: `{e}`")
+            await client.send_message(log_admin, f"⚠ Error anti-viewonce")
 
 # === FITUR: PING ===
 async def ping_handler(event, client):
@@ -1195,7 +1250,7 @@ async def ping_handler(event, client):
         await msg.edit(text)
 
     except Exception as e:
-        await event.reply(f"⚠ Error /ping: `{e}`")
+        await event.reply(f"⚠ Error /ping")
 
 
 # === FITUR: HEARTBEAT ===
@@ -1238,7 +1293,7 @@ async def heartbeat(client, log_admin, log_channel, akun_nama):
 
         except Exception as e:
             if log_admin:
-                await client.send_message(log_admin, f"⚠ Heartbeat Error: `{e}`")
+                await client.send_message(log_admin, f"⚠ Heartbeat Error")
 
         await asyncio.sleep(300)
 
@@ -1359,7 +1414,7 @@ async def process_link(event, client, chat_part, msg_id, target_chat=None):
                 await client.send_message(send_to, text, buttons=buttons)
 
     except Exception as e:
-        await event.reply(f"🚨 Error: `{e}`")
+        await event.reply(f"🚨 Error")
 
 
 async def handle_save_command(event, client):
@@ -1430,7 +1485,7 @@ async def whois_handler(event, client):
         full = await client(GetFullUserRequest(user.id))
         bio = full.full_user.about or "-"
     except Exception as e:
-        bio = f"⚠ Tidak bisa ambil bio: {e}"
+        bio = f"⚠ Tidak bisa ambil bio"
 
     # Informasi dasar
     if user.id == me.id:
@@ -1474,7 +1529,7 @@ async def whois_handler(event, client):
         common = await client(GetCommonChatsRequest(user_id=user.id, max_id=0, limit=100))
         common_count = len(common.chats)
     except Exception as e:
-        common_count = f"⚠ Error ambil grup bersama: {e}"
+        common_count = f"⚠ Error ambil grup bersama"
 
     # Format teks
     text = (
@@ -1519,7 +1574,7 @@ async def whois_handler(event, client):
         else:
             await event.reply(text, link_preview=False)
     except Exception as e:
-        await event.reply(f"{text}\n\n⚠ Error ambil foto profil: {e}")
+        await event.reply(f"{text}\n\n⚠ Error ambil foto profil")
 
 
 # === FITUR: DOWNLOADER ===
@@ -1652,7 +1707,7 @@ async def download_tiktok(url, quality='best'):
         return result
         
     except Exception as e:
-        return {'success': False, 'message': f'Error TikTok: {str(e)}'}
+        return {'success': False, 'message': f'Error TikTok'}
 
 async def download_instagram(url, quality='best'):
     """Handler untuk download Instagram - updated to return better data"""
@@ -1729,7 +1784,7 @@ async def download_instagram(url, quality='best'):
         return result
         
     except Exception as e:
-        return {'success': False, 'message': f'Error Instagram: {str(e)}'}
+        return {'success': False, 'message': f'Error Instagram'}
 
 async def handle_downloader(event, client):
     """Handler utama untuk command /d dan /download"""
@@ -1826,7 +1881,7 @@ async def handle_downloader(event, client):
                     else:
                         await event.reply(f"{caption}\n\n🔗 [Download Video]({video_url})")
                 except Exception as e:
-                    await event.reply(f"{caption}\n\n🔗 [Download Video]({video_url})\n\n⚠️ Error: {str(e)}")
+                    await event.reply(f"{caption}\n\n🔗 [Download Video]({video_url})\n\n⚠️ Error")
                 
                 # Download and send audio/music if available
                 music_url = result.get('music_info', {}).get('url')
@@ -2275,9 +2330,9 @@ async def main():
                 await hd_handler(event, c)
 
         if "edit" in acc["features"]:
-            @client.on(events.NewMessage(pattern=r"^/edit"))
-            async def edit_event(event, c=client):
-                await edit_handler(event, c)
+            @client.on(events.NewMessage(pattern=r"^/edit1"))
+            async def edit1_event(event, c=client):
+                await edit1_handler(event, c)
                 
         if "edit" in acc["features"]:
             @client.on(events.NewMessage(pattern=r"^/edit2"))
@@ -2300,7 +2355,7 @@ async def main():
                 await catbox_handler(event, c)
                 
         if "pomf2" in acc["features"]:
-            @client.on(events.NewMessage(pattern=r"^/catbox$"))
+            @client.on(events.NewMessage(pattern=r"^/pomf"))
             async def pomf2_event(event, c=client):
                 await pomf2_handler(event, c)
 
