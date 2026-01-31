@@ -35,6 +35,7 @@ ACCOUNTS = [
             "uguu",
             "catbox",
             "pomf2",
+            "quax",
         ],
     },
     {
@@ -48,6 +49,7 @@ ACCOUNTS = [
             "uguu",
             "catbox",
             "pomf2",
+            "quax",
         ],
     }
 ]
@@ -57,6 +59,109 @@ clients = []
 
 # waktu start untuk /ping uptime
 start_time_global = datetime.now()
+
+
+
+
+
+
+async def upload_to_quax(path: str, expiry: str = "-1") -> str:
+    # expiry = "-1" (Permanent), "1", "7", "30", atau "365"
+    async with aiohttp.ClientSession() as session:
+        with open(path, "rb") as f:
+            form = aiohttp.FormData()
+            form.add_field("files[]", f, filename=os.path.basename(path))
+            # Tambahkan parameter expiry sesuai request website qu.ax
+            form.add_field("expiry", expiry)
+            
+            async with session.post("https://qu.ax/upload", data=form) as resp:
+                if resp.status != 200:
+                    raise Exception(f"Upload gagal dengan status code {resp.status}")
+                
+                data = await resp.json()
+                
+                # Validasi respons JSON
+                if not data.get("success") or not data.get("files"):
+                    raise Exception("Format respons tidak valid")
+                    
+                return data["files"][0]["url"]
+
+async def quax_handler(event, client):
+    if not event.is_private:
+        return
+
+    me = await client.get_me()
+    if event.sender_id != me.id:
+        return
+
+    # === PARSING DURASI ===
+    # Default ke 1 Hari (1)
+    expiry_code = "1"
+    expiry_text = "1 Hari"
+
+    # Ambil argumen dari command (misal: /quax 7d atau /quax 1h)
+    text_args = event.pattern_match.group(1).strip().lower() if event.pattern_match.group(1) else ""
+    
+    if text_args:
+        # Mapping teks user ke kode API qu.ax
+        if text_args in ["1d", "1", "1day", "daily"]:
+            expiry_code = "1"
+            expiry_text = "1 Hari"
+        elif text_args in ["7d", "7", "1w", "weekly", "7days"]:
+            expiry_code = "7"
+            expiry_text = "7 Hari"
+        elif text_args in ["30d", "30", "1m", "monthly", "30days"]:
+            expiry_code = "30"
+            expiry_text = "30 Hari"
+        elif text_args in ["365d", "365", "1y", "yearly", "1year"]:
+            expiry_code = "365"
+            expiry_text = "1 Tahun"
+        elif text_args in ["perm", "-1", "forever", "permanent"]:
+            expiry_code = "-1"
+            expiry_text = "Permanen"
+
+    # Case 1: Reply ke media/file
+    if event.is_reply:
+        reply_msg = await event.get_reply_message()
+        if not (reply_msg.media or reply_msg.document):
+            await event.respond("❌ Reply harus ke media/file.")
+            return
+
+        await event.respond(f"📤 Sedang upload ke Qu.ax ({expiry_text})...")
+        try:
+            path = await client.download_media(reply_msg)
+            quax_url = await upload_to_quax(path, expiry=expiry_code)
+            os.remove(path)
+            await event.respond(f"✅ File berhasil diupload! ({expiry_text})\n🔗 {quax_url}")
+        except Exception as e:
+            await event.respond(f"❌ Error upload ke Qu.ax: `{e}`")
+        return
+
+    # Case 2: Kirim media dengan caption /quax
+    if event.media:
+        # Cek apakah ada teks durasi setelah command, jika tidak pakai default
+        await event.respond(f"📤 Sedang upload ke Qu.ax ({expiry_text})...")
+        try:
+            path = await client.download_media(event.message)
+            quax_url = await upload_to_quax(path, expiry=expiry_code)
+            os.remove(path)
+            await event.respond(f"✅ File berhasil diupload! ({expiry_text})\n🔗 {quax_url}")
+        except Exception as e:
+            await event.respond(f"❌ Error upload ke Qu.ax: `{e}`")
+        return
+
+    # Bantuan penggunaan
+    help_text = (
+        "❌ Gunakan `/quax` dengan reply ke file/media.\n\n"
+        "⏱️ **Set Durasi:**\n"
+        "• `/quax 1d` -> 1 Hari\n"
+        "• `/quax 7d` -> 7 Hari\n"
+        "• `/quax 30d` -> 30 Hari\n"
+        "• `/quax 1y` -> 1 Tahun\n"
+        "• `/quax perm` -> Permanen (Default)"
+    )
+    await event.respond(help_text)
+
 
 async def upload_to_pomf2(path: str) -> str:
     async with aiohttp.ClientSession() as session:
@@ -971,6 +1076,11 @@ async def main():
             @client.on(events.NewMessage(pattern=r"^/pomf"))
             async def pomf2_event(event, c=client):
                 await pomf2_handler(event, c)
+
+        if "quax" in acc["features"]:
+            @client.on(events.NewMessage(pattern=r"^/quax(?:\s+(.+))?"))
+            async def quax_event(event, c=client):
+                await quax_handler(event, c)
 
         
 
