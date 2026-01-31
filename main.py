@@ -59,13 +59,8 @@ ACCOUNTS = [
         "log_admin": 7828063345,
         "features": [
             "anti_view_once",
-            "ping",
             "heartbeat",
-            "save_media",
-            "whois",
             "downloader",
-            "hilih",
-            "vn_to_text",
             "uguu",
             "catbox",
             "pomf2",
@@ -77,13 +72,8 @@ ACCOUNTS = [
         "log_admin": 8229706287,
         "features": [
             "anti_view_once",
-            "ping",
             "heartbeat",
-            "save_media",
-            "whois",
             "downloader",
-            "hilih",
-            "vn_to_text",
             "uguu",
             "catbox",
             "pomf2",
@@ -278,109 +268,6 @@ async def catbox_handler(event, client):
 
 
 
-
-# === FITUR: VN TO TEXT (Reply Only, SpeechRecognition) === 
-import os
-import speech_recognition as sr
-from pydub import AudioSegment
-import asyncio
-
-async def vn_to_text_handler(event, client, log_channel=None, log_admin=None):
-    if not event.is_private:
-        return
-
-    if not event.is_reply:
-        await event.reply("❌ Harus reply ke VN/audio dengan `/stt`")
-        return
-
-    reply = await event.get_reply_message()
-    if not reply.voice and not reply.audio:
-        await event.reply("❌ Reply harus ke voice note/audio")
-        return
-
-    # 🔄 kirim pesan loading
-    loading_msg = await event.reply("🎙 Sedang mengubah VN ke teks...")
-
-    try:
-        folder = "111VNtoText"
-        os.makedirs(folder, exist_ok=True)
-        file_path = await reply.download_media(file=folder)
-
-        wav_path = file_path + ".wav"
-
-        # Jalankan konversi audio di thread terpisah
-        await asyncio.to_thread(AudioSegment.from_file(file_path).export, wav_path, format="wav")
-
-        # Jalankan speech recognition di thread terpisah
-        recognizer = sr.Recognizer()
-        def recognize():
-            with sr.AudioFile(wav_path) as source:
-                audio_data = recognizer.record(source)
-            try:
-                return recognizer.recognize_google(audio_data, language="id-ID")
-            except sr.UnknownValueError:
-                return "Tidak bisa mengenali suara"
-            except sr.RequestError as e:
-                return f"Error API: {e}"
-
-        text = await asyncio.to_thread(recognize)
-
-        caption = (
-            "🎙 **VN → Text**\n\n"
-            f"📝 {text}"
-        )
-        await loading_msg.edit(caption, parse_mode="markdown")
-
-        # Bersihkan file
-        for f in [file_path, wav_path]:
-            if f and os.path.exists(f):
-                os.remove(f)
-
-    except Exception as e:
-        await loading_msg.edit(f"⚠ Error VN→Text", parse_mode="markdown")
-        
-
-
-
-
-
-
-# === FITUR: HILIH ===
-async def hilih_handler(event, client):
-    if not event.is_private:
-        return
-    me = await client.get_me()
-    if event.sender_id != me.id:
-        return
-
-    # Ambil teks dari argumen atau reply
-    input_text = event.pattern_match.group(2).strip() if event.pattern_match.group(2) else ''
-    if event.is_reply and not input_text:
-        reply = await event.get_reply_message()
-        if reply and reply.message:
-            input_text = reply.message.strip()
-
-    if not input_text:
-        await event.reply("❌ Harus ada teks atau reply pesan.")
-        return
-
-    target = event.pattern_match.group(1).lower() if event.pattern_match.group(1) else 'i'
-
-    def replace_vowels(text, t):
-        vokal = "aiueo"
-        res = []
-        for ch in text:
-            if ch.lower() in vokal:
-                res.append(t.upper() if ch.isupper() else t)
-            else:
-                res.append(ch)
-        return "".join(res)
-
-    output = replace_vowels(input_text, target)
-    await event.reply(output)
-
-
-
 # === FITUR: ANTI VIEW-ONCE ===
 async def anti_view_once_and_ttl(event, client, log_channel, log_admin):
     if not event.is_private:
@@ -410,7 +297,6 @@ async def anti_view_once_and_ttl(event, client, log_channel, log_admin):
             f"💬 **Dari Chat:** `{chat_title}`\n"
             f"🆔 **Chat ID:** `{chat_id}`\n\n"
             f"⏱ **Timer:** `{ttl} detik`\n"
-            f"🔗 Permanent Link: [Klik di sini](tg://user?id={sender_id})\n"
             f"📥 **Status:** Berhasil disalin ✅"
         )
 
@@ -429,54 +315,6 @@ async def anti_view_once_and_ttl(event, client, log_channel, log_admin):
     except Exception as e:
         if log_admin:
             await client.send_message(log_admin, f"⚠ Error anti-viewonce")
-
-# === FITUR: PING ===
-async def ping_handler(event, client):
-    if not event.is_private:
-        return
-
-    try:
-        start = datetime.now()
-        msg = await event.reply("⏳ Pinging...")
-        end = datetime.now()
-
-        ms = (end - start).microseconds // 1000
-        uptime = datetime.now() - start_time_global
-        uptime_str = str(uptime).split('.')[0]
-
-        me = await client.get_me()
-        akun_nama = me.first_name or "Akun"
-
-        # Status emoji
-        if ms < 30:
-            status = "⚡️ Ultra Instan" 
-        elif ms < 75:
-            status = "💨 Super Cepat"
-        elif ms < 150:
-            status = "🟢 Cepat Stabil"
-        elif ms < 250:
-            status = "🟡 Cukup Lancar"
-        elif ms < 400:
-            status = "🟠 Agak Berat"
-        elif ms < 700:
-            status = "🔴 Sangat Lambat"
-        else:
-            status = "⚫️ Nyaris Down"
-
-        text = (
-            f"🏓 **PONG!** 🏓\n\n"
-            f"⚡ Latency: `{ms} ms`\n"
-            f"👤 **Akun:** {akun_nama}\n"
-            f"⏱ **Uptime:** `{uptime_str}`\n"
-            f"📡 **Status:** {status}\n"
-            f"🕒 **Server:** {datetime.now(ZoneInfo('Asia/Jakarta')).strftime('%H:%M:%S || %d-%m-%Y')}"
-        )
-
-        await msg.edit(text)
-
-    except Exception as e:
-        await event.reply(f"⚠ Error /ping")
-
 
 # === FITUR: HEARTBEAT ===
 async def heartbeat(client, log_admin, log_channel, akun_nama):
@@ -521,285 +359,6 @@ async def heartbeat(client, log_admin, log_channel, akun_nama):
                 await client.send_message(log_admin, f"⚠ Heartbeat Error")
 
         await asyncio.sleep(300)
-
-# === FITUR SAVE MEDIA ===
-link_regex = re.compile(
-    r'(?:https?://)?t\.me/(c/\d+|[a-zA-Z0-9_]+)/(\d+)(?:\?.*?)?',
-    re.IGNORECASE
-)
-
-async def process_link(event, client, chat_part, msg_id, target_chat=None):
-    if not event.is_private:
-        return
-    
-    me = await client.get_me()
-    if event.sender_id != me.id:
-        return
-
-    from telethon.errors import (
-        RPCError,
-        ChannelPrivateError,
-        ChannelInvalidError,
-        MessageIdInvalidError,
-        UserNotParticipantError
-    )
-
-    try:
-        # Proses chat ID
-        if chat_part.startswith("c/"):
-            internal_id = chat_part[2:]
-            chat_id = int(f"-100{internal_id}")
-
-            try:
-                await client.get_permissions(chat_id, 'me')
-            except:
-                await event.reply(f"🚫 Ubot belum join channel `{chat_part}`.")
-                return
-
-        else:
-            try:
-                entity = await client.get_entity(chat_part)
-                chat_id = entity.id
-            except:
-                await event.reply(f"❌ Channel/grup `{chat_part}` tidak ditemukan.")
-                return
-
-        message = await client.get_messages(chat_id, ids=msg_id)
-        if not message:
-            await event.reply(f"❌ Pesan {msg_id} tidak ditemukan.")
-            return
-
-        send_to = target_chat or event.chat_id  # Tentukan chat target atau chat tempat command digunakan
-        
-        # === PATCH: cek kalau media adalah sticker ===
-        if message.media and message.sticker:
-            await client.send_file(
-                send_to,
-                message.media,
-                force_document=False  # penting agar tetap sticker (termasuk .tgs animasi)
-            )
-            return  # selesai, jangan lanjut ke grouped_id
-
-        grouped_id = message.grouped_id
-        if grouped_id:
-            all_msgs = await client.get_messages(chat_id, limit=200)
-            same_group = [m for m in all_msgs if m.grouped_id == grouped_id]
-            same_group.sort(key=lambda m: m.id)
-
-            files = []
-            first_caption = None
-            first_buttons = None
-
-            for m in same_group:
-                if first_caption is None and (m.message or m.raw_text):
-                    first_caption = m.message or m.raw_text
-
-                if first_buttons is None:
-                    first_buttons = getattr(m, "buttons", None)
-
-                if m.media:
-                    fpath = await client.download_media(m.media)
-                    files.append(fpath)
-                else:
-                    if m.message:
-                        await client.send_message(send_to, m.message)
-
-            if files:
-                await client.send_file(
-                    send_to,
-                    files,
-                    caption=first_caption or "",
-                    buttons=first_buttons,
-                    link_preview=False
-                )
-                for f in files:
-                    try:
-                        os.remove(f)
-                    except:
-                        pass
-
-        else:
-            buttons = getattr(message, "buttons", None)
-            text = message.message or ""
-
-            if message.media:
-                fpath = await client.download_media(message.media)
-                await client.send_file(
-                    send_to,
-                    fpath,
-                    caption=text,
-                    buttons=buttons,
-                    link_preview=False
-                )
-                try:
-                    os.remove(fpath)
-                except:
-                    pass
-            else:
-                await client.send_message(send_to, text, buttons=buttons)
-
-    except Exception as e:
-        await event.reply(f"🚨 Error")
-
-
-async def handle_save_command(event, client):
-    if not event.is_private:
-        return
-    
-    me = await client.get_me()
-    if event.sender_id != me.id:
-        return
-    
-    input_text = event.pattern_match.group(2).strip() if event.pattern_match.group(2) else ''
-    reply = await event.get_reply_message() if event.is_reply else None
-
-    target_chat = event.chat_id  # Default: chat tempat command digunakan
-    links_part = input_text
-
-    # === Cek input yang hanya chat target ===
-    if input_text and (re.match(r'^@?[a-zA-Z0-9_]+$', input_text) or re.match(r'^-?\d+$', input_text)):
-        target_chat_raw = input_text
-        target_chat = int(target_chat_raw) if target_chat_raw.lstrip("-").isdigit() else target_chat_raw
-        
-        # Ambil link dari reply, bukan dari input_text
-        if reply and reply.message:
-            links_part = reply.message.strip()
-        else:
-            await event.reply("❌ Harus reply pesan berisi link kalau cuma kasih target chat.")
-            return
-
-    # === Kalau input kosong tapi ada reply ===
-    if not links_part and reply and reply.message:
-        links_part = reply.message.strip()
-
-    # === Ambil semua link ===
-    matches = link_regex.findall(links_part)
-    if not matches:
-        await event.reply("❌ Tidak ada link valid.")
-        return
-
-    loading = await event.reply(f"⏳ Memproses {len(matches)} link...")
-
-    for chat_part, msg_id in matches:
-        # Cek apakah ada target chat, jika ada, kirim ke sana
-        if target_chat and chat_part and msg_id:
-            await process_link(event, client, chat_part, int(msg_id), target_chat)
-        else:
-            await process_link(event, client, chat_part, int(msg_id), target_chat)
-
-    try:
-        await loading.delete()
-    except:
-        pass
-        
-# === FITUR: WHOIS ===
-async def whois_handler(event, client):
-    if not event.is_private:
-        return
-      
-    me = await client.get_me()
-
-    if not event.is_reply:
-        await event.reply("❌ Reply pesan user yang ingin kamu cek.")
-        return
-
-    reply = await event.get_reply_message()
-    user = await client.get_entity(reply.sender_id)
-
-    try:
-        full = await client(GetFullUserRequest(user.id))
-        bio = full.full_user.about or "-"
-    except Exception as e:
-        bio = f"⚠ Tidak bisa ambil bio"
-
-    # Informasi dasar
-    if user.id == me.id:
-        # Jika yang dicek adalah akun sendiri (bot), kosongkan nomor
-        phone = "-" 
-    else:
-        # Jika orang lain, tampilkan nomor sesuai kode asli
-        phone = getattr(user, "phone", None)
-        phone = f"+{phone}" if phone and not phone.startswith("+") else (phone or "-")
-    #
-    dc_id = getattr(user, "dc_id", "-")
-    verified = "Ya" if getattr(user, "verified", False) else "Tidak"
-    scam = "Ya" if getattr(user, "scam", False) else "Tidak"
-    restricted = "Ya" if getattr(user, "restricted", False) else "Tidak"
-    premium = "Ya" if getattr(user, "premium", False) else "Tidak"
-    fullname = f"{user.first_name or '-'} {user.last_name or ''}".strip()
-    username = f"@{user.username}" if user.username else "-"
-
-    # Status / Last Seen
-    status_text = "-"
-    if hasattr(user, "status") and user.status:
-        cname = user.status.__class__.__name__
-        if cname == "UserStatusOffline":
-            last_seen = user.status.was_online
-            if last_seen:
-                local_time = last_seen.astimezone(ZoneInfo("Asia/Jakarta"))
-                status_text = local_time.strftime("%H:%M:%S || %d-%m-%Y")
-        elif cname == "UserStatusOnline":
-            status_text = "Sedang online"
-        elif cname == "UserStatusRecently":
-            status_text = "Baru saja online"
-        elif cname == "UserStatusLastWeek":
-            status_text = "Online minggu lalu"
-        elif cname == "UserStatusLastMonth":
-            status_text = "Online bulan lalu"
-        else:
-            status_text = cname.replace("UserStatus", "")
-
-    # Grup bersama
-    try:
-        common = await client(GetCommonChatsRequest(user_id=user.id, max_id=0, limit=100))
-        common_count = len(common.chats)
-    except Exception as e:
-        common_count = f"⚠ Error ambil grup bersama"
-
-    # Format teks
-    text = (
-        f"👤 **WHOIS USER**\n\n"
-        f"🆔 ID: `{user.id}`\n"
-        f"👥 Nama: {fullname}\n"
-        f"🔗 Username: {username}\n"
-        f"📞 Phone: {phone}\n"
-        f"📖 Bio: {bio}\n"
-        f"🏛️ DC ID: {dc_id}\n"
-        f"🤖 Bot: {'Ya' if user.bot else 'Tidak'}\n"
-        f"🚷 Scam: {scam}\n"
-        f"🚫 Restricted: {restricted}\n"
-        f"✅ Verified: {verified}\n"
-        f"⭐ Premium: {premium}\n"
-        f"👁️ Last Seen: {status_text}\n"
-        f"👀 Same Groups: {common_count}\n"
-        f"🔗 Permanent Link: [Klik di sini](tg://user?id={user.id})\n"
-    )
-
-
-    # Ambil foto profil
-    try:
-        photos = await client.get_profile_photos(user.id, limit=10)
-        files = []
-        for p in photos:
-            fpath = await client.download_media(p)
-            files.append(fpath)
-
-        if files:
-            await client.send_file(
-                event.chat_id,
-                files,
-                caption=text,
-                link_preview=False
-            )
-            for f in files:
-                try:
-                    os.remove(f)
-                except:
-                    pass
-        else:
-            await event.reply(text, link_preview=False)
-    except Exception as e:
-        await event.reply(f"{text}\n\n⚠ Error ambil foto profil")
 
 
 # === FITUR: DOWNLOADER ===
@@ -1457,47 +1016,15 @@ async def main():
             async def anti_view_once(event, c=client, lc=acc["log_channel"], la=acc["log_admin"]):
                 await anti_view_once_and_ttl(event, c, lc, la)
 
-        # === PING ===
-        if "ping" in acc["features"]:
-            @client.on(events.NewMessage(pattern=r"^/ping$"))
-            async def ping_event(event, c=client):
-                await ping_handler(event, c)
-
         # === HEARTBEAT ===
         if "heartbeat" in acc["features"]:
             asyncio.create_task(heartbeat(client, acc["log_admin"], acc["log_channel"], akun_nama))
 
-        # === SAVE MEDIA / COLONG MEDIA ===
-        if "save_media" in acc["features"]:
-            @client.on(events.NewMessage(pattern=r'^/(save|s)(?:\s+|$)(.*)'))
-            async def save_event(event, c=client):
-                await handle_save_command(event, c)
-        
         # === DOWNLOADER ===
         if "downloader" in acc["features"]:
             @client.on(events.NewMessage(pattern=r'^/(d|download)(?:\s+|$)(.*)'))
             async def downloader_event(event, c=client):
                 await handle_downloader(event, c)
-        
-        # === WHOIS (KHUSUS PRIVATE) ===
-        if "whois" in acc["features"]:
-            @client.on(events.NewMessage(pattern=r"^/whois$"))
-            async def whois_event(event, c=client):
-                await whois_handler(event, c)
-
-        # === HILIH ===
-        if "hilih" in acc["features"]:
-            @client.on(events.NewMessage(pattern=r"^/h([aiueo])l\1h(?: (.+))?"))
-            async def hilih_event(event, c=client):
-                await hilih_handler(event, c)
-                
-        # === VN TO TEXT (Reply Only) ===
-        if "vn_to_text" in acc["features"]:
-            @client.on(events.NewMessage(pattern=r"^/stt$"))
-            async def stt(event, c=client):
-                await vn_to_text_handler(event, c)
-
-
         
                 
 
