@@ -1,10 +1,5 @@
 telethon
 flask
 requests
-httpx
 beautifulsoup4
-yt-dlp
-SpeechRecognition
-pydub
 aiohttp
-pillow>=10.0.0
