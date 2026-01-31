@@ -4,10 +4,7 @@
 import asyncio
 import os
 import re
-import mimetypes
 import aiohttp
-import speech_recognition as sr
-from pydub import AudioSegment
 from telethon import types
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -17,35 +14,9 @@ from telethon.sessions import StringSession
 from flask import Flask
 from threading import Thread
 
-from telethon.tl.functions.users import GetFullUserRequest
-from telethon.tl.functions.messages import GetCommonChatsRequest
-
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, parse_qs, urlencode, unquote, quote
-from telethon.tl.functions.account import UpdateProfileRequest
-from telethon.tl.types import InputPhoto
-from telethon.tl.functions.photos import DeletePhotosRequest, UploadProfilePhotoRequest
-
-from telethon.tl.functions.account import GetPrivacyRequest, SetPrivacyRequest
-from telethon.tl.types import (
-    InputPrivacyKeyProfilePhoto, InputPrivacyKeyAbout,
-    InputPrivacyValueAllowUsers, InputPrivacyValueDisallowAll
-)
-
-import os, mimetypes
-from telethon import events
-from telethon.tl.functions.users import GetFullUserRequest
-from telethon.tl.functions.photos import UploadProfilePhotoRequest, DeletePhotosRequest
-from telethon.tl.functions.account import UpdateProfileRequest, GetPrivacyRequest, SetPrivacyRequest
-from telethon.tl.types import (
-    InputPrivacyKeyProfilePhoto, InputPrivacyKeyAbout,
-    InputPrivacyValueDisallowAll, InputPrivacyValueAllowUsers,
-    InputPhoto
-)
-
-
-
+from urllib.parse import urlparse, parse_qs, urlencode
 
 # === KONFIGURASI UTAMA ===
 API_ID = 20958475
@@ -87,18 +58,6 @@ clients = []
 # waktu start untuk /ping uptime
 start_time_global = datetime.now()
 
-
-
-
-
-
-
-
-
-
-
-
-
 async def upload_to_pomf2(path: str) -> str:
     async with aiohttp.ClientSession() as session:
         with open(path, "rb") as f:
@@ -107,7 +66,6 @@ async def upload_to_pomf2(path: str) -> str:
             resp = await session.post("https://pomf2.lain.la/upload.php", data=form)
             data = await resp.json()
             return data["files"][0]["url"]
-
 
 async def pomf2_handler(event, client):
     if not event.is_private:
@@ -148,13 +106,6 @@ async def pomf2_handler(event, client):
 
     await event.respond("❌ Gunakan `/pomf` dengan reply ke file/media, atau kirim media dengan caption `/pomf`.")
 
-
-
-
-
-
-
-
 async def upload_to_uguu(path):
     async with aiohttp.ClientSession() as session:
         with open(path, "rb") as f:
@@ -165,8 +116,6 @@ async def upload_to_uguu(path):
             if isinstance(json_resp, dict) and "files" in json_resp:
                 return json_resp["files"][0]["url"]
             raise ValueError(f"Unexpected response")
-
-
 
 async def uguu_handler(event, client):
     if not event.is_private:
@@ -207,10 +156,6 @@ async def uguu_handler(event, client):
 
     await event.respond("❌ Gunakan `/uguu` dengan reply ke file/media, atau kirim media dengan caption `/uguu`.")
 
-
-
-
-
 async def upload_to_catbox(path):
     async with aiohttp.ClientSession() as session:
         with open(path, "rb") as f:
@@ -219,9 +164,6 @@ async def upload_to_catbox(path):
             form.add_field("fileToUpload", f, filename=os.path.basename(path))
             resp = await session.post("https://catbox.moe/user/api.php", data=form)
             return (await resp.text()).strip()
-
-
-
 
 async def catbox_handler(event, client):
     if not event.is_private:
@@ -261,12 +203,6 @@ async def catbox_handler(event, client):
         return
 
     await event.respond("❌ Gunakan `/catbox` dengan reply ke file/media, atau kirim media dengan caption `/catbox`.")
-
-
-
-
-
-
 
 # === FITUR: ANTI VIEW-ONCE ===
 async def anti_view_once_and_ttl(event, client, log_channel, log_admin):
@@ -359,7 +295,6 @@ async def heartbeat(client, log_admin, log_channel, akun_nama):
                 await client.send_message(log_admin, f"⚠ Heartbeat Error")
 
         await asyncio.sleep(300)
-
 
 # === FITUR: DOWNLOADER ===
 def is_valid_url(url):
@@ -968,10 +903,6 @@ async def handle_downloader(event, client):
             pass
         await event.reply(f"❌ Terjadi error")
 
-
-
-
-
 # ========== BAGIAN 3 ==========
 # WEB SERVER, RESTART LOOP, MAIN + HANDLER
 
@@ -989,7 +920,6 @@ def run():
 def keep_alive():
     Thread(target=run).start()
 
-
 # === AUTO RESTART LOOP ===
 async def run_clients_forever():
     while True:
@@ -999,7 +929,6 @@ async def run_clients_forever():
         await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         print("⚠ Client disconnect, restart 5 detik...")
         await asyncio.sleep(5)
-
 
 # === MAIN ===
 async def main():
@@ -1043,7 +972,6 @@ async def main():
             async def pomf2_event(event, c=client):
                 await pomf2_handler(event, c)
 
-
         
 
 
@@ -1076,6 +1004,5 @@ async def main():
 
     print(f"✅ Ubot aktif dengan {len(clients)} akun.")
     await run_clients_forever()
-
 
 asyncio.run(main())
