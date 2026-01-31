@@ -38,23 +38,9 @@ ACCOUNTS = [
             "pomf2",
             "quax",
             "litterbox",
+            "offshore",
         ],
     },
-    {
-        "session": "1BVtsOHUBu4rA0AQ5MYm0rgyA5IGxaHH4Th8EWZBrSCUkKQKlQtRx_R0p6IPA5OG7iJQwVUCBbulqveFrMXSgYINp_goMA3UwMZ0yhVSqexfceze1Yh65ZT8jYZ4mrj7DQ4PxQZLeL3gmRKom6ySq4L7pSnQJBosMNI-hqMLy8dgEoz9vVp2QRA5vfE4e3doyRgUAc1zigaE5ozBSHge5-Tqn7K0e_ofccu5CwDaJggsxyGGK4LrpuVADS7HG7jUJJWg9_qUkZRc3YkUrO9fgnzP468znQkosAWuPORlEomNbG7uYeO8bMGYrMiuVNwDBhsXNHiNT4M3p1oLxMMzZXi1kSP9P9h4=",
-        "log_channel": None,
-        "log_admin": 8229706287,
-        "features": [
-            "anti_view_once",
-            "heartbeat",
-            "downloader",
-            "uguu",
-            "catbox",
-            "pomf2",
-            "quax",
-            "litterbox",
-        ],
-    }
 ]
 
 # list global client (diisi di main)
@@ -67,6 +53,75 @@ start_time_global = datetime.now()
 
 
 
+
+async def upload_to_offshore(path: str) -> str:
+    async with aiohttp.ClientSession() as session:
+        with open(path, "rb") as f:
+            form = aiohttp.FormData()
+            # Menggunakan nama field standar untuk Lolisafe/Upstream
+            form.add_field("files[]", f, filename=os.path.basename(path))
+            
+            # Endpoint yang sudah terbukti bekerja
+            resp = await session.post("https://files.offshore.cat/api/upload", data=form)
+            
+            if resp.status != 200:
+                raise Exception(f"Upload gagal. Status code: {resp.status}")
+            
+            try:
+                data = await resp.json()
+                # Memastikan data ada dan mengambil URL
+                if "files" in data and len(data["files"]) > 0:
+                    url_part = data["files"][0]["url"]
+                    
+                    # PERBAIKAN: Cek apakah URL hanya berupa jalur (relative path)
+                    # Contoh: "/api/file/uuid"
+                    if url_part.startswith("/"):
+                        return "https://files.offshore.cat" + url_part
+                    
+                    return url_part
+            except Exception as e:
+                raise Exception(f"Gagal memproses respon JSON server: {e}")
+            
+            raise Exception("Format respon tidak dikenali.")
+
+async def offshore_handler(event, client):
+    if not event.is_private:
+        return
+
+    me = await client.get_me()
+    if event.sender_id != me.id:
+        return
+
+    # Case 1: Reply ke media/file
+    if event.is_reply:
+        reply_msg = await event.get_reply_message()
+        if not (reply_msg.media or reply_msg.document):
+            await event.respond("❌ Reply harus ke media/file.")
+            return
+
+        await event.respond("📤 Sedang upload ke Offshore.cat...")
+        try:
+            path = await client.download_media(reply_msg)
+            offshore_url = await upload_to_offshore(path)
+            os.remove(path)
+            await event.respond(f"✅ File berhasil diupload!\n🔗 {offshore_url}")
+        except Exception as e:
+            await event.respond(f"❌ Error upload ke Offshore.cat: `{e}`")
+        return
+
+    # Case 2: Kirim media dengan caption /offshore
+    if event.media and event.raw_text.strip() == "/offshore":
+        await event.respond("📤 Sedang upload ke Offshore.cat...")
+        try:
+            path = await client.download_media(event.message)
+            offshore_url = await upload_to_offshore(path)
+            os.remove(path)
+            await event.respond(f"✅ File berhasil diupload!\n🔗 {offshore_url}")
+        except Exception as e:
+            await event.respond(f"❌ Error upload ke Offshore.cat: `{e}`")
+        return
+
+    await event.respond("❌ Gunakan `/offshore` dengan reply ke file/media, atau kirim media dengan caption `/offshore`.")
 
 
 async def upload_to_litterbox(path: str, time_str: str = "1h") -> str:
@@ -1184,6 +1239,11 @@ async def main():
             @client.on(events.NewMessage(pattern=r"^/litterbox(?:\s+(.+))?"))
             async def litterbox_event(event, c=client):
                 await litterbox_handler(event, c)
+
+        if "offshore" in acc["features"]:
+            @client.on(events.NewMessage(pattern=r"^/offshore$"))
+            async def offshore_event(event, c=client):
+                await offshore_handler(event, c)
 
         
 
