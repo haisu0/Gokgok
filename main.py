@@ -154,11 +154,11 @@ async def quax_handler(event, client):
     help_text = (
         "❌ Gunakan `/quax` dengan reply ke file/media.\n\n"
         "⏱️ **Set Durasi:**\n"
-        "• `/quax 1d` -> 1 Hari\n"
+        "• `/quax 1d` -> 1 Hari (Default)\n"
         "• `/quax 7d` -> 7 Hari\n"
         "• `/quax 30d` -> 30 Hari\n"
         "• `/quax 1y` -> 1 Tahun\n"
-        "• `/quax perm` -> Permanen (Default)"
+        "• `/quax perm` -> Permanen"
     )
     await event.respond(help_text)
 
