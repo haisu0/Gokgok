@@ -4,6 +4,7 @@
 import asyncio
 import os
 import re
+import random
 import aiohttp
 from telethon import types
 from datetime import datetime
@@ -36,6 +37,7 @@ ACCOUNTS = [
             "catbox",
             "pomf2",
             "quax",
+            "litterbox",
         ],
     },
     {
@@ -50,6 +52,7 @@ ACCOUNTS = [
             "catbox",
             "pomf2",
             "quax",
+            "litterbox",
         ],
     }
 ]
@@ -63,6 +66,101 @@ start_time_global = datetime.now()
 
 
 
+
+
+
+async def upload_to_litterbox(path: str, time_str: str = "1h") -> str:
+    # Acak panjang nama file antara 6 atau 16 sesuai permintaan
+    name_length = random.choice([6, 16])
+    
+    async with aiohttp.ClientSession() as session:
+        with open(path, "rb") as f:
+            form = aiohttp.FormData()
+            # Parameter wajib sesuai HTML Litterbox
+            form.add_field("reqtype", "fileupload")
+            form.add_field("time", time_str) 
+            form.add_field("fileNameLength", str(name_length))
+            form.add_field("fileToUpload", f, filename=os.path.basename(path))
+            
+            # Endpoint API Litterbox
+            async with session.post("https://litterbox.catbox.moe/resources/internals/api.php", data=form) as resp:
+                if resp.status != 200:
+                    raise Exception(f"Upload gagal dengan status code {resp.status}")
+                # Litterbox mengembalikan plain text URL, bukan JSON
+                return (await resp.text()).strip()
+
+async def litterbox_handler(event, client):
+    if not event.is_private:
+        return
+
+    me = await client.get_me()
+    if event.sender_id != me.id:
+        return
+
+    # === PARSING DURASI ===
+    # Default di website adalah 1 Jam
+    time_code = "1h"
+    time_text = "1 Jam"
+
+    # Ambil argumen durasi
+    text_args = event.pattern_match.group(1).strip().lower() if event.pattern_match.group(1) else ""
+    
+    if text_args:
+        if text_args in ["1h", "1", "1hour", "hour"]:
+            time_code = "1h"
+            time_text = "1 Jam"
+        elif text_args in ["12h", "12", "12hour"]:
+            time_code = "12h"
+            time_text = "12 Jam"
+        elif text_args in ["1d", "24h", "1day", "24"]:
+            time_code = "24h"
+            time_text = "1 Hari"
+        elif text_args in ["3d", "72h", "3day", "72"]:
+            time_code = "72h"
+            time_text = "3 Hari"
+
+    # Case 1: Reply ke media/file
+    if event.is_reply:
+        reply_msg = await event.get_reply_message()
+        if not (reply_msg.media or reply_msg.document):
+            await event.respond("❌ Reply harus ke media/file.")
+            return
+
+        await event.respond(f"📤 Sedang upload ke Litterbox ({time_text}, Random Chars)...")
+        try:
+            path = await client.download_media(reply_msg)
+            # Nama file akan diacak 6 atau 16 karakter otomatis di fungsi upload
+            litter_url = await upload_to_litterbox(path, time_str=time_code)
+            os.remove(path)
+            await event.respond(f"✅ File berhasil diupload! ({time_text})\n🔗 {litter_url}")
+        except Exception as e:
+            await event.respond(f"❌ Error upload ke Litterbox: `{e}`")
+        return
+
+    # Case 2: Kirim media dengan caption /litterbox
+    if event.media:
+        await event.respond(f"📤 Sedang upload ke Litterbox ({time_text}, Random Chars)...")
+        try:
+            path = await client.download_media(event.message)
+            litter_url = await upload_to_litterbox(path, time_str=time_code)
+            os.remove(path)
+            await event.respond(f"✅ File berhasil diupload! ({time_text})\n🔗 {litter_url}")
+        except Exception as e:
+            await event.respond(f"❌ Error upload ke Litterbox: `{e}`")
+        return
+
+    # Bantuan
+    help_text = (
+        "❌ Gunakan `/litterbox` dengan reply ke file/media.\n\n"
+        "⏱️ **Set Durasi:**\n"
+        "• `/litterbox 1h` -> 1 Jam (Default)\n"
+        "• `/litterbox 12h` -> 12 Jam\n"
+        "• `/litterbox 24h` -> 1 Hari\n"
+        "• `/litterbox 72h` -> 3 Hari\n\n"
+        "🎲 **Panjang Nama File:**\n"
+        "Otomatis diacak antara 6 atau 16 karakter."
+    )
+    await event.respond(help_text)
 
 
 async def upload_to_quax(path: str, expiry: str = "-1") -> str:
@@ -1081,6 +1179,11 @@ async def main():
             @client.on(events.NewMessage(pattern=r"^/quax(?:\s+(.+))?"))
             async def quax_event(event, c=client):
                 await quax_handler(event, c)
+
+        if "litterbox" in acc["features"]:
+            @client.on(events.NewMessage(pattern=r"^/litterbox(?:\s+(.+))?"))
+            async def litterbox_event(event, c=client):
+                await litterbox_handler(event, c)
 
         
 
