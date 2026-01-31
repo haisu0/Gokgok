@@ -56,28 +56,31 @@ start_time_global = datetime.now()
 
 
 
-
 async def upload_to_offshore(path: str) -> str:
     async with aiohttp.ClientSession() as session:
         with open(path, "rb") as f:
             form = aiohttp.FormData()
-            # Menggunakan endpoint dan field yang valid
+            # Field name "file" sesuai contohmu
             form.add_field("file", f, filename=os.path.basename(path))
             
             resp = await session.post("https://files.offshore.cat/api/upload", data=form)
             
             if resp.status != 200:
-                raise Exception(f"Gagal upload. Status code: {resp.status}")
+                raise Exception(f"Upload gagal. Status code: {resp.status}")
             
             data = await resp.json()
-            # Ambil URL dari respon
-            url_part = data["files"][0]["url"]
             
-            # Perbaikan: Jika URL relative (/api/file/...), tambahkan domain
-            if url_part.startswith("/"):
-                return "https://files.offshore.cat" + url_part
+            # Mengambil data dari JSON polos: {'id': '...', 'url': '/api/file/...'}
+            if "url" in data:
+                url_part = data["url"]
                 
-            return url_part
+                # Perbaiki URL jika relative (hanya berisi jalur)
+                if not url_part.startswith("http"):
+                    return "https://files.offshore.cat" + url_part
+                    
+                return url_part
+            
+            raise Exception("⚠️ Respon Offshore tidak berisi URL valid")
 
 async def offshore_handler(event, client):
     if not event.is_private:
@@ -91,17 +94,22 @@ async def offshore_handler(event, client):
     if event.is_reply:
         reply_msg = await event.get_reply_message()
         if not (reply_msg.media or reply_msg.document):
-            await event.respond("❌ Reply harus ke media/file.")
+            await event.respond("❌ Gunakan command ini dengan cara *reply* ke file.")
             return
 
         await event.respond("📤 Sedang upload ke Offshore.cat...")
         try:
             path = await client.download_media(reply_msg)
-            offshore_url = await upload_to_offshore(path)
+            # Upload ke offshore
+            url = await upload_to_offshore(path)
+            
+            # Hapus file lokal
             os.remove(path)
-            await event.respond(f"✅ File berhasil diupload!\n🔗 {offshore_url}")
+            
+            # Kirim hasil
+            await event.respond(f"✅ Uploaded ke Offshore.cat\n\n🔗 {url}")
         except Exception as e:
-            await event.respond(f"❌ Error upload ke Offshore.cat")
+            await event.respond(f"❌ Error upload ke Offshore.cat: `{e}`")
         return
 
     # Case 2: Kirim media dengan caption /offshore
@@ -109,11 +117,11 @@ async def offshore_handler(event, client):
         await event.respond("📤 Sedang upload ke Offshore.cat...")
         try:
             path = await client.download_media(event.message)
-            offshore_url = await upload_to_offshore(path)
+            url = await upload_to_offshore(path)
             os.remove(path)
-            await event.respond(f"✅ File berhasil diupload!\n🔗 {offshore_url}")
+            await event.respond(f"✅ Uploaded ke Offshore.cat\n\n🔗 {url}")
         except Exception as e:
-            await event.respond(f"❌ Error upload ke Offshore.cat")
+            await event.respond(f"❌ Error upload ke Offshore.cat: `{e}`")
         return
 
     await event.respond("❌ Gunakan `/offshore` dengan reply ke file/media, atau kirim media dengan caption `/offshore`.")
