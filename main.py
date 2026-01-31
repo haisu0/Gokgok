@@ -55,81 +55,29 @@ start_time_global = datetime.now()
 
 
 
+
+
 async def upload_to_offshore(path: str) -> str:
-    # Daftar kemungkinan endpoint
-    endpoints = [
-        "api/upload",
-        "upload",
-        "api.php",
-        "index.php",
-        "u",
-        "upload.php"
-    ]
-
-    # Daftar kemungkinan nama field
-    field_names = [
-        "files[]",
-        "file",
-        "fileToUpload",
-        "data"
-    ]
-
-    filename = os.path.basename(path)
-
-    # Baca file ke memory agar cepat
-    with open(path, "rb") as f:
-        file_content = f.read()
-
     async with aiohttp.ClientSession() as session:
-        # Loop semua kombinasi endpoint dan field
-        for ep in endpoints:
-            for field in field_names:
-                try:
-                    form = aiohttp.FormData()
-                    form.add_field(field, file_content, filename=filename)
-
-                    async with session.post(f"https://files.offshore.cat/{ep}", data=form) as resp:
-                        
-                        # Jika server merespon 200 OK
-                        if resp.status == 200:
-                            try:
-                                data = await resp.json()
-
-                                # Struktur JSON 1 (Standar Lolisafe)
-                                if "files" in data:
-                                    raw_url = data["files"][0]["url"]
-                                # Struktur JSON 2
-                                elif "file" in data and "url" in data["file"]:
-                                    raw_url = data["file"]["url"]
-                                # Struktur JSON 3 (Simple)
-                                elif "url" in data:
-                                    raw_url = data["url"]
-                                else:
-                                    continue # Struktur salah, lanjut coba lagi
-
-                                # Perbaikan Link (Jika relative path)
-                                if raw_url.startswith("/"):
-                                    return "https://files.offshore.cat" + raw_url
-                                return raw_url
-
-                            except:
-                                # Coba Parse sebagai Plain Text
-                                text = (await resp.text()).strip()
-                                if text.startswith("http"):
-                                    return text
-                                if text.startswith("/api/file/"):
-                                    return "https://files.offshore.cat" + text
-
-                except Exception:
-                    # Jika error (404, timeout), lanjut ke kombinasi berikutnya
-                    continue
-
-    # Jika semua percobaan gagal
-    raise Exception(
-        "⚠️ Gagal upload ke Offshore.cat.\n"
-        "Tidak ditemukan endpoint upload publik.\n"
-        "Kemungkinan upload hanya via JavaScript browser."
-    )
+        with open(path, "rb") as f:
+            form = aiohttp.FormData()
+            # Menggunakan endpoint dan field yang valid
+            form.add_field("file", f, filename=os.path.basename(path))
+            
+            resp = await session.post("https://files.offshore.cat/api/upload", data=form)
+            
+            if resp.status != 200:
+                raise Exception(f"Gagal upload. Status code: {resp.status}")
+            
+            data = await resp.json()
+            # Ambil URL dari respon
+            url_part = data["files"][0]["url"]
+            
+            # Perbaikan: Jika URL relative (/api/file/...), tambahkan domain
+            if url_part.startswith("/"):
+                return "https://files.offshore.cat" + url_part
+                
+            return url_part
 
 async def offshore_handler(event, client):
     if not event.is_private:
@@ -146,26 +94,26 @@ async def offshore_handler(event, client):
             await event.respond("❌ Reply harus ke media/file.")
             return
 
-        await event.respond("📤 Sedang upload ke Offshore.cat (Mencoba Endpoint)...")
+        await event.respond("📤 Sedang upload ke Offshore.cat...")
         try:
             path = await client.download_media(reply_msg)
             offshore_url = await upload_to_offshore(path)
             os.remove(path)
             await event.respond(f"✅ File berhasil diupload!\n🔗 {offshore_url}")
         except Exception as e:
-            await event.respond(f"❌ Error upload ke Offshore.cat: `{e}`")
+            await event.respond(f"❌ Error upload ke Offshore.cat")
         return
 
     # Case 2: Kirim media dengan caption /offshore
     if event.media and event.raw_text.strip() == "/offshore":
-        await event.respond("📤 Sedang upload ke Offshore.cat (Mencoba Endpoint)...")
+        await event.respond("📤 Sedang upload ke Offshore.cat...")
         try:
             path = await client.download_media(event.message)
             offshore_url = await upload_to_offshore(path)
             os.remove(path)
             await event.respond(f"✅ File berhasil diupload!\n🔗 {offshore_url}")
         except Exception as e:
-            await event.respond(f"❌ Error upload ke Offshore.cat: `{e}`")
+            await event.respond(f"❌ Error upload ke Offshore.cat")
         return
 
     await event.respond("❌ Gunakan `/offshore` dengan reply ke file/media, atau kirim media dengan caption `/offshore`.")
