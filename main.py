@@ -54,7 +54,7 @@ API_HASH = '1cfb28ef51c138a027786e43a27a8225'
 # === DAFTAR AKUN ===
 ACCOUNTS = [
     {
-        "session": "1BVtsOHUBu48xkg8lC3R5iAmgs2jvV-8H4hZWuhbGEb0_OSblMM4vJXn74BGCYWeweuAocQW_FIsxVXAgRfvBFqGraU8pysYvxaqA5qwzQXvOVyne3rrCETFYZm2EiKYVArBT8OlD-1_70wqFD2fG-gr97070AeK8p0ExYfNEsOvjo2-acvBIoVKSVI54WxpMqEGHSf_qfnHzlwbMIovQdVAcWQ6vpb5v3vl8NVrb-bvQA3mSplcmRYDESM1UtdRtSLLeNdvM_Spt1vJsiqC0Bp3xD7kFwcItnd32t6I47Q0twqcV9B_AdYSWa3-2NX6xQh7IcVT92qAgeATo00YL4UxOJaIo8B8=",
+        "session": "1BVtsOHUBuyP0TX5bq30qFUifUXh2tZgNsa31H7T0j9wpx_23OF2zutQYaQFU-9cdY1r6poU_kXwMM12dG3MJbdo3cEtiGSoapYwD2PahQ1kq8J2Fy00LZKEtzgtQLrJ7LLvL8xHk5gRMi26tyagCq_F9d6yy7hc8JfHejESJBExvytIiNm4oAIrL0GAFwjNQ8_9Uw_5Iqa0pQz2qBu21d4IV6ULC8t23_fNwm6zl0008ci1I2uTIBHxvhXBcdAuNv0WyAgxc8tigiJ1QtURfEMKobZkMoTWuVKipdYO8x9ed59_ICd_NpGos-W160Fbmy3mnTXijCVgTCQplvY49CpZ6oZp0RJ8=",
         "log_channel": None,
         "log_admin": 7828063345,
         "features": [
@@ -79,7 +79,7 @@ ACCOUNTS = [
         ],
     },
     {
-        "session": "1BVtsOHUBu4sznsaaujgILOJHHyt8EaFFWui717UA7aueNnwgInJErdF_Y2frJTphoQdBfPJOrQRsIfY985ZA2BDK4kUI7ixuKGxK4fcSGp2XUbn6SeplhVJADxUvq2t-Dlsh7e5mQn4hYfvf7humdXcClPgfZAcfG8LENbBKHprt23wpEPh3pakM3dIUjw6fiwdskJ5Vl3yIUZHEerskDH2cZ7Jsyhz0WCz1QFi3wyC3gMB-TQF25ur4RkkzSLwgaXeuDLoC3crTCP4EuFoNhlaRLJJ_a5Jy6a2kvq-6PNtWtSEAn920YH6CWPCUGBxV9ff309C-rH5kwMNRZ0Nr-k5XYYuXiow=",
+        "session": "1BVtsOKgBu0RyB8nXk6rWu_0WSYnv09yshY88SJhJ1ryY8V5blcjJaNjacZflwUwwqL2L2-4FhJYFELbWNnPPooaH3hSrPY9FwgtH1T5nD1K8n4WZSVUYMcPTfoWamHQd1FyeGhuHS4RLs26QvfK6q90YnH7eN3pSucwc3A_pqX1XzyTjWdn1P7DNjIpXAZYqCK5IX1XQXIT9R7rM2PoVF7K8B-tj45oGVZNECBSlY1Y9QWjE8tK9fTnQjQRVpnn_KTH3Z5zge7x-vpCFiDH3jU4hGCPUPypWimzTWWVAiLh9d_ZDEuARzUnTpG_yCSCmRKF6G3xiyUlzhP_DWedq-wQvlvIHxSU=",
         "log_channel": None,
         "log_admin": 8229706287,
         "features": [
