@@ -26,9 +26,25 @@ API_HASH = '1cfb28ef51c138a027786e43a27a8225'
 # === DAFTAR AKUN ===
 ACCOUNTS = [
     {
-        "session": "1BVtsOLkBu0zsz7YendvuSFDgaCZ0FjEV_J92LyPrTfNCJ9V6jmr8nfVWlyFHaA6TKlfwaTPMxTYWo-qNO0PRl-xlwtxN0p339NyCfhZjUhzrQ2I-m4HfeY6Mtk8QVPMY581lOhRCTUcNY0GaN5xHvLfIWw0BtA2MfQbEfiPM5KZSk76zzDRMSbRxoELeOqseqKgtNIo-7D6hzEQpQlG2J-h5SrMhcHvZjnAS_fDSXBL5kyUY0mX9a2rGzXgB6YH8qE23dMEHCTFBYRz5kE2miwr01aiGQ2wHiuZpzE5r3zQj4ioKSKUMFuO2nVBrVvFeJwob-A6rHsJhwCoqdW0jJizFXTrXFkU=",
+        "session": "1BVtsOIoBuyTnc0vqoFJ3yQuJSrp_U1hbq-HyuaYrQLmYrXlCrwheOKM1HLpvEguvRpKCpG4zAbz-z54MtY0jx03IeP-rEHTUryAJO3O9oTrtV_DX_Ye1-J2DACn5IZoSSyf564S3H22nE_Tl6nxRpVSAegFrqekHFuSMUnop_WWVJslRX8AqfPSBbW1QkEZylmgjmhexfCO3UgVO_8yKkEIAs9x1PUCDJAPLFcQi-zjc8bUl-32L5p3UHzoXFUeob9angtC__bPzc8xh-4dv7zv5jGABXzvmrRWLEl9AWAR6yL0F0q3wge_ZkzZSMmNtk1aYHzreLGqf5XNwmaiAvg7y_qAJ4fU=",
         "log_channel": None,
         "log_admin": 7828063345,
+        "features": [
+            "anti_view_once",
+            "heartbeat",
+            "downloader",
+            "uguu",
+            "catbox",
+            "pomf2",
+            "quax",
+            "litterbox",
+            "offshore",
+        ],
+    },
+    {
+        "session": "1BVtsOIoBuwfH4Vh6eslc1U4Ym9Ef00gHy3mm_h2_2nWOzreCfG6YmUWSKWnBCPXZTCG8Xi2ucMvaLTycvYyrgiYdnxmQh0RcHGGJBsfzzqCHvC5wXTjRS0sl2ZAY7SY9Jxs1JJ6LmIwSDTHQDLGQQnsmKH-wBMO53nEpylxwDOaPIqHD0S2Ym8ihijgsD1SH-tJ5Z5XDy3KHnSxX_X6BCADRhITDTTjKfwKoAJ36MobmixwrTr7TXPGAJ1HL6b4NUSRDqxXog6A_LIT32aQg8ur7p58uRVyl9jeL3MvIP2XU6qzYeSduPiPu4B7yCoenhxFWXYiB9-HiPLeh4hXoyNMTWa8LQl4=",
+        "log_channel": None,
+        "log_admin": 8229706287,
         "features": [
             "anti_view_once",
             "heartbeat",
