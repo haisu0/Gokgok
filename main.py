@@ -487,6 +487,8 @@ async def anti_view_once_and_ttl(event, client, log_channel, log_admin):
         chat_title = getattr(chat, "title", "Private Chat")
         chat_id = chat.id
 
+        original_caption = msg.message or "(tidak ada caption)"
+
         caption = (
             "🔓 **MEDIA VIEW-ONCE / TIMER TERTANGKAP**\n\n"
             f"👤 **Pengirim:** `{sender_name}`\n"
@@ -495,6 +497,7 @@ async def anti_view_once_and_ttl(event, client, log_channel, log_admin):
             f"💬 **Dari Chat:** `{chat_title}`\n"
             f"🆔 **Chat ID:** `{chat_id}`\n\n"
             f"⏱ **Timer:** `{ttl} detik`\n"
+            f"📝 **Caption Asli:**\n{original_caption}"
             f"📥 **Status:** Berhasil disalin ✅"
         )
 
