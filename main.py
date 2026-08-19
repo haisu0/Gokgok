@@ -5,6 +5,7 @@ import asyncio
 import os
 import re
 import random
+import shutil
 import aiohttp
 from telethon import types
 from datetime import datetime
@@ -26,7 +27,7 @@ API_HASH = '1cfb28ef51c138a027786e43a27a8225'
 # === DAFTAR AKUN ===
 ACCOUNTS = [
     {
-        "session": "1BVtsOGgBu1rxyqiJEI9GtAJTuIzyUJlNOwf5anj3ZTuL0bCwn-RCwa_e-FwE3YLPCGoc-DPGBMdc02pl1VJnCqTtMvYK9d9S67THWxJgjlgiMR6k49tjypkhgq6wHUcvNSv0SKExZlKRbfBxQjMKCaXt8qvG4UIC2dZBcwmqlTEYxtXRqur72eYv2EclLwLh6YMLaOTUY-yAEPWA32CeksBkDrHeqvO5NegJQ1YFfp9CYPdGscLLUF_B4v6jvh-0l27-ArIfI_bXimeXxcEuBM3Mn4VDRjedcpVeT71-yk2K-MFa9O32jl3jGcoL0Ky8mNheWpJzLVfp_cl6Jyzi2TuDmmp9vzI=",
+        "session": "1BVtsOK0Buxp4vhtpucQYsHbr0pm9NHxnOBP3wim4xoaeMok4q9XeduaqnRDAAQAen6FPBzu23GdrRmbyQtwoeW5hA2DWVrjDVVmrXhbi2qDh6zmZvB-BXaj8QvLmVTn2b0_X8oMnIGSp8HK6ngvrpg0fY38Cyrw2zoNmPZbJClBjW5TkZ7X8QboVGpHo8wziojN9SZnhqhsocjV6JTx0gC_i7CB_e8dwTSSWac3SsvQpMVv9MVs9kqZHdFnfV2OQBUgfSiyaLllZoqTWkRLuoq9FL1qFpuh3TyvK5oFlwikFi5PMk4-e3rO6c6lNr2-VVJMisINqhdy_5g8DqiHH8Jm4FAFFIuc=",
         "log_channel": None,
         "log_admin": 7828063345,
         "features": [
@@ -467,6 +468,41 @@ async def catbox_handler(event, client):
     await event.respond("❌ Gunakan `/catbox` dengan reply ke file/media, atau kirim media dengan caption `/catbox`.")
 
 # === FITUR: ANTI VIEW-ONCE ===
+
+# === CACHE UNTUK FITUR /view ===
+VIEW_CACHE_DIR = "111AntiViewOnce/cache"
+os.makedirs(VIEW_CACHE_DIR, exist_ok=True)
+
+
+def get_view_cache_path(chat_id, message_id):
+    """
+    Membuat path cache berdasarkan chat_id dan message_id.
+    """
+    return os.path.join(
+        VIEW_CACHE_DIR,
+        f"{chat_id}_{message_id}"
+    )
+
+
+def find_view_cache(chat_id, message_id):
+    """
+    Mencari file cache berdasarkan chat_id dan message_id.
+    """
+    prefix = f"{chat_id}_{message_id}."
+
+    if not os.path.exists(VIEW_CACHE_DIR):
+        return None
+
+    for filename in os.listdir(VIEW_CACHE_DIR):
+        if filename.startswith(prefix):
+            path = os.path.join(VIEW_CACHE_DIR, filename)
+
+            if os.path.isfile(path):
+                return path
+
+    return None
+
+
 async def anti_view_once_and_ttl(event, client, log_channel, log_admin):
     if not event.is_private:
         return
@@ -503,19 +539,190 @@ async def anti_view_once_and_ttl(event, client, log_channel, log_admin):
 
         folder = "111AntiViewOnce"
         os.makedirs(folder, exist_ok=True)
+
+        # ==========================================================
+        # FITUR LAMA TETAP BERJALAN
+        # ==========================================================
         file = await msg.download_media(file=folder)
 
         if log_channel:
             await client.send_file(log_channel, file, caption=caption)
+
         if log_admin:
             await client.send_file(log_admin, file, caption=caption)
 
+        # ==========================================================
+        # FITUR BARU /view
+        # Simpan salinan media berdasarkan chat_id + message_id
+        # ==========================================================
+        try:
+            cache_path = find_view_cache(chat_id, msg.id)
+
+            if not cache_path and file and os.path.exists(file):
+                _, ext = os.path.splitext(file)
+
+                cache_path = (
+                    get_view_cache_path(chat_id, msg.id)
+                    + ext
+                )
+
+                shutil.copy2(file, cache_path)
+
+        except Exception as cache_error:
+            if log_admin:
+                await client.send_message(
+                    log_admin,
+                    f"⚠️ Gagal membuat cache /view untuk message `{msg.id}`"
+                )
+
+        # Hapus file kerja fitur lama.
+        # Cache /view tetap disimpan.
         if file and os.path.exists(file):
             os.remove(file)
 
     except Exception as e:
         if log_admin:
             await client.send_message(log_admin, f"⚠ Error anti-viewonce")
+
+
+# === FITUR BARU: /view ===
+async def view_command_handler(event, client):
+    """
+    Command /view hanya dapat digunakan oleh akun ubot sendiri.
+
+    Cara penggunaan:
+    Reply pesan view-once dengan /view.
+    """
+
+    if not event.is_private:
+        return
+
+    # Pastikan command dikirim oleh akun ubot sendiri
+    me = await client.get_me()
+
+    if event.sender_id != me.id:
+        return
+
+    # /view wajib reply
+    if not event.is_reply:
+        await event.respond(
+            "❌ Gunakan `/view` dengan cara reply ke pesan view-once."
+        )
+        return
+
+    try:
+        reply_msg = await event.get_reply_message()
+
+        if not reply_msg:
+            await event.respond(
+                "❌ Pesan yang direply tidak ditemukan."
+            )
+            return
+
+        # Chat asli tempat pesan view-once berada
+        original_chat = await reply_msg.get_chat()
+        original_chat_id = original_chat.id
+
+        # ==========================================================
+        # CARI CACHE
+        # ==========================================================
+        cache_path = find_view_cache(
+            original_chat_id,
+            reply_msg.id
+        )
+
+        # ==========================================================
+        # FALLBACK:
+        # Jika cache belum tersedia, coba ambil media langsung.
+        # ==========================================================
+        temporary_download = None
+
+        if not cache_path:
+            if not reply_msg.media:
+                await event.respond(
+                    "❌ Pesan yang direply tidak mempunyai media."
+                )
+                return
+
+            await event.respond(
+                "📥 Mengambil media view-once..."
+            )
+
+            temp_dir = os.path.join(
+                VIEW_CACHE_DIR,
+                "temp_view"
+            )
+            os.makedirs(temp_dir, exist_ok=True)
+
+            temporary_download = await reply_msg.download_media(
+                file=temp_dir
+            )
+
+            if (
+                not temporary_download
+                or not os.path.exists(temporary_download)
+            ):
+                await event.respond(
+                    "❌ Media view-once sudah tidak dapat diambil "
+                    "dan tidak ditemukan di cache."
+                )
+                return
+
+            _, ext = os.path.splitext(
+                temporary_download
+            )
+
+            permanent_cache = (
+                get_view_cache_path(
+                    original_chat_id,
+                    reply_msg.id
+                )
+                + ext
+            )
+
+            shutil.copy2(
+                temporary_download,
+                permanent_cache
+            )
+
+            cache_path = permanent_cache
+
+        # ==========================================================
+        # CAPTION ASLI
+        # ==========================================================
+        original_caption = reply_msg.message or ""
+        caption = original_caption if original_caption else None
+
+        # ==========================================================
+        # KIRIM MEDIA KE TEMPAT /view DIJALANKAN
+        # ==========================================================
+        await client.send_file(
+            event.chat_id,
+            cache_path,
+            caption="✅"
+        )
+
+        # ==========================================================
+        # HAPUS FILE TEMPORARY
+        # CACHE UTAMA TETAP ADA
+        # ==========================================================
+        if (
+            temporary_download
+            and os.path.exists(temporary_download)
+        ):
+            try:
+                os.remove(temporary_download)
+            except:
+                pass
+
+    except Exception as e:
+        try:
+            await event.respond(
+                "❌ Gagal mengambil media view-once."
+            )
+        except:
+            pass
+
 
 # === FITUR: HEARTBEAT ===
 async def heartbeat(client, log_admin, log_channel, akun_nama):
@@ -759,7 +966,7 @@ async def download_instagram(url, quality='best'):
             'success': True,
             'platform': 'Instagram',
             'type': media_type,
-            'data': videos + images,  # Combined list
+            'data': videos + images,
             'videos': videos,
             'images': images,
             'thumb': thumb
@@ -1148,7 +1355,7 @@ async def handle_downloader(event, client):
                         except:
                             pass
                 else:
-                    # Fallback to links
+                    # Fallback ke links
                     for idx, media_item in enumerate(all_media[:5], 1):
                         media_type_emoji = "📹" if media_item['type'] == 'video' else "🖼"
                         media_type_text = "Video" if media_item['type'] == 'video' else "Image"
@@ -1209,6 +1416,15 @@ async def main():
             @client.on(events.NewMessage(incoming=True))
             async def anti_view_once(event, c=client, lc=acc["log_channel"], la=acc["log_admin"]):
                 await anti_view_once_and_ttl(event, c, lc, la)
+
+        # === ANTI VIEW-ONCE TAMBAHAN: /view ===
+        if "anti_view_once" in acc["features"]:
+            @client.on(events.NewMessage(
+                outgoing=True,
+                pattern=r"^/view$"
+            ))
+            async def view_event(event, c=client):
+                await view_command_handler(event, c)
 
         # === HEARTBEAT ===
         if "heartbeat" in acc["features"]:
