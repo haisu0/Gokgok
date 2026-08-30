@@ -27,7 +27,7 @@ API_HASH = '1cfb28ef51c138a027786e43a27a8225'
 # === DAFTAR AKUN ===
 ACCOUNTS = [
     {
-        "session": "1BVtsOK0Buxp4vhtpucQYsHbr0pm9NHxnOBP3wim4xoaeMok4q9XeduaqnRDAAQAen6FPBzu23GdrRmbyQtwoeW5hA2DWVrjDVVmrXhbi2qDh6zmZvB-BXaj8QvLmVTn2b0_X8oMnIGSp8HK6ngvrpg0fY38Cyrw2zoNmPZbJClBjW5TkZ7X8QboVGpHo8wziojN9SZnhqhsocjV6JTx0gC_i7CB_e8dwTSSWac3SsvQpMVv9MVs9kqZHdFnfV2OQBUgfSiyaLllZoqTWkRLuoq9FL1qFpuh3TyvK5oFlwikFi5PMk4-e3rO6c6lNr2-VVJMisINqhdy_5g8DqiHH8Jm4FAFFIuc=",
+        "session": "1BVtsOKkBuxJcrNPIXeEJPv5TeeUtTslfqIo50wtO6WFgs63rZOtUjsoXY0Ib7ISLlMAf6EmFTIHmdD8iE8-RNXC9LbofwVL0MuZ6ABSHNz1GR32zXgPEOJBkAJezzPLTWoc-MJ3fmBgGVcfzilW4zhsrL0Nmk4148-AqyZ9gRHbQWmjyb_tNehOU0bDXLOMXRfNcDQD6Js5zjbIXZe999UaJIjJ84GtT4Acw3DoJv-3sIJSXcfkaHjfN-OVbFJy2WTFcz-BL4PSNQMV1gzfFhcNYD5vuGugkn_gancgHFOx4SHSlOLRANzQq2EFrqN9mYs4_499s81OMMjihR9KeZx-OrDsowv0=",
         "log_channel": None,
         "log_admin": 7828063345,
         "features": [
