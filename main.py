@@ -497,7 +497,7 @@ async def anti_view_once_and_ttl(event, client, log_channel, log_admin):
             f"💬 **Dari Chat:** `{chat_title}`\n"
             f"🆔 **Chat ID:** `{chat_id}`\n\n"
             f"⏱ **Timer:** `{ttl} detik`\n"
-            f"📝 **Caption Asli:**\n{original_caption}\n"
+            f"📝 **Caption Asli:** {original_caption}\n"
             f"📥 **Status:** Berhasil disalin ✅"
         )
 
