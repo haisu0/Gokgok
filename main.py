@@ -22,12 +22,12 @@ from urllib.parse import urlparse, parse_qs, urlencode
 
 # === KONFIGURASI UTAMA ===
 API_ID = 20958475
-API_HASH = 'YOUR_API_HASH'
+API_HASH = '1cfb28ef51c138a027786e43a27a8225'
 
 # === DAFTAR AKUN ===
 ACCOUNTS = [
     {
-        "session": "YOUR_STRING_SESSION",
+        "session": "1BVtsOMYBu1utbKBxyb6xjkJf8k91bI_3dmKsknfvZ-BKh2Z8Pb8PmIf2n79kizNcDBp_xCrnCKrZpPuZ3RwP4JonKDdPfL0qrY1ShKSvZ8l-l6euk-Ajjz4VQC2qVWp5zcYFte0RcB-DCfMkmOkK5uo2FSw2JCkVA6brjoxFbcRaAG5Vj_OzDYDUBifYfcBWcuH5gZHPFwyi5XCFDDO5THrBbKYbWUmJs5q-wYSRB2-K9bcnjlrXaowiiD1qg0HiLnkhzzybtE5rk_zmN6bKJR1BUuwmBp3Q6l8XFWi_eFuFbsv0ac5Uw3oURQHEYqCeIOZB2O01oZNlluhhpJoN8l_xSMMTsKw=",
         "log_channel": None,
         "log_admin": 7828063345,
         "features": [
